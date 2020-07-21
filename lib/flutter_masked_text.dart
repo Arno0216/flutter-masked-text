@@ -3,8 +3,7 @@ library flutter_masked_text;
 import 'package:flutter/material.dart';
 
 class MaskedTextController extends TextEditingController {
-  MaskedTextController({String text, this.mask, Map<String, RegExp> translator})
-      : super(text: text) {
+  MaskedTextController({String text, this.mask, Map<String, RegExp> translator}) : super(text: text) {
     this.translator = translator ?? MaskedTextController.getDefaultTranslator();
 
     this.addListener(() {
@@ -32,10 +31,9 @@ class MaskedTextController extends TextEditingController {
   String _lastUpdatedText = '';
 
   void updateText(String text) {
-    if(text != null){
+    if (text != null) {
       this.text = this._applyMask(this.mask, text);
-    }
-    else {
+    } else {
       this.text = '';
     }
 
@@ -53,8 +51,7 @@ class MaskedTextController extends TextEditingController {
 
   void moveCursorToEnd() {
     var text = this._lastUpdatedText;
-    this.selection = new TextSelection.fromPosition(
-        new TextPosition(offset: (text ?? '').length));
+    this.selection = new TextSelection.fromPosition(new TextPosition(offset: (text ?? '').length));
   }
 
   @override
@@ -129,11 +126,11 @@ class MaskedTextController extends TextEditingController {
 class MoneyMaskedTextController extends TextEditingController {
   MoneyMaskedTextController(
       {double initialValue = 0.0,
-        this.decimalSeparator = ',',
-        this.thousandSeparator = '.',
-        this.rightSymbol = '',
-        this.leftSymbol = '',
-        this.precision = 2}) {
+      this.decimalSeparator = ',',
+      this.thousandSeparator = '.',
+      this.rightSymbol = '',
+      this.leftSymbol = '',
+      this.precision = 2}) {
     _validateConfig();
 
     this.addListener(() {
@@ -155,31 +152,32 @@ class MoneyMaskedTextController extends TextEditingController {
   double _lastValue = 0.0;
 
   void updateValue(double value) {
-    double valueToUse = value;
+    if (value == null) {
+      this.text = '';
+    } else {
+      double valueToUse = value;
+      if (value.toStringAsFixed(0).length > 12) {
+        valueToUse = _lastValue;
+      } else {
+        _lastValue = value;
+      }
 
-    if (value.toStringAsFixed(0).length > 12) {
-      valueToUse = _lastValue;
-    }
-    else {
-      _lastValue = value;
-    }
+      String masked = this._applyMask(valueToUse);
 
-    String masked = this._applyMask(valueToUse);
+      if (rightSymbol.length > 0) {
+        masked += rightSymbol;
+      }
 
-    if (rightSymbol.length > 0) {
-      masked += rightSymbol;
-    }
+      if (leftSymbol.length > 0) {
+        masked = leftSymbol + masked;
+      }
 
-    if (leftSymbol.length > 0) {
-      masked = leftSymbol + masked;
-    }
+      if (masked != this.text) {
+        this.text = masked;
 
-    if (masked != this.text) {
-      this.text = masked;
-
-      var cursorPosition = super.text.length - this.rightSymbol.length;
-      this.selection = new TextSelection.fromPosition(
-          new TextPosition(offset: cursorPosition));
+        var cursorPosition = super.text.length - this.rightSymbol.length;
+        this.selection = new TextSelection.fromPosition(new TextPosition(offset: cursorPosition));
+      }
     }
   }
 
@@ -188,7 +186,7 @@ class MoneyMaskedTextController extends TextEditingController {
 
     parts.insert(parts.length - precision, '.');
 
-    return double.parse(parts.join());
+    return double.tryParse(parts.join());
   }
 
   _validateConfig() {
@@ -210,19 +208,15 @@ class MoneyMaskedTextController extends TextEditingController {
   }
 
   String _applyMask(double value) {
-    List<String> textRepresentation = value.toStringAsFixed(precision)
-        .replaceAll('.', '')
-        .split('')
-        .reversed
-        .toList(growable: true);
+    List<String> textRepresentation =
+        value.toStringAsFixed(precision).replaceAll('.', '').split('').reversed.toList(growable: true);
 
     textRepresentation.insert(precision, decimalSeparator);
 
     for (var i = precision + 4; true; i = i + 4) {
       if (textRepresentation.length > i) {
         textRepresentation.insert(i, thousandSeparator);
-      }
-      else {
+      } else {
         break;
       }
     }
